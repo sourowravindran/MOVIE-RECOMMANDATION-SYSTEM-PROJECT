@@ -1,0 +1,83 @@
+import pandas as pd
+import numpy as np
+import difflib
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+# Data collection and pre-processing
+
+# Load the dataset
+data = pd.read_csv("/content/movies_new_darta.csv")
+data.head()
+
+# Display dataset shape
+data.shape
+
+# Display descriptive statistics
+data.describe()
+
+# Define features for recommendation
+features = ['genres', 'keywords', 'tagline', 'cast', 'director']
+print(features)
+
+# Fill missing values in specified features with an empty string
+for df in features:
+    data[df] = data[df].fillna(" ")
+
+# Combine features into a single string for each movie
+combining_feat = data['genres'] + " " + data['keywords'] + " " + data['tagline'] + " " + data['cast'] + " " + data["director"]
+
+# Display the combined features
+combining_feat
+
+# Convert combined features into numerical values using TF-IDF vectorization
+tf = TfidfVectorizer()
+data_vec = tf.fit_transform(combining_feat)
+
+# Display TF-IDF vectorized data
+print(data_vec)
+
+# Calculate similarity using cosine similarity
+similarity = cosine_similarity(data_vec)
+print(similarity)
+
+# User input: Enter the movie name
+movie_name = str(input("Enter the movie name: "))
+
+# Getting the names of all the movies
+titles = [str(item) for item in data['title']]
+print(titles)
+
+# Finding a close match using difflib
+find_close_match = difflib.get_close_matches(movie_name, titles)
+print(find_close_match)
+
+# Retrieve the closest match
+close_match = find_close_match[0]
+print(close_match)
+
+# Finding the index of the closest match
+find_index = data[data.title == close_match]['index'].values[0]
+print(find_index)
+
+# Convert the index to an integer
+find_index = int(find_index)
+
+# Getting the similarity scores
+similar_score = list(enumerate(similarity[find_index]))
+print(similar_score)
+
+# Sort the similar movies based on similarity score
+sorted_similar_movies = sorted(similar_score, key=lambda x: x[1], reverse=True)
+print(sorted_similar_movies)
+
+# Display suggested movies
+print("Movie suggested for you:\n")
+
+i = 1
+for x in sorted_similar_movies:
+    index = x[0]
+    title_from_index = data.loc[index, 'title']
+    if i < 21:
+        print(i, ")", title_from_index)
+        i += 1
